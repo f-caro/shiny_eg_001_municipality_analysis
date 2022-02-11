@@ -78,7 +78,7 @@ server <- function(input, output) {
   
   output$dataTbl1 <- renderDataTable({
     
-    faithful
+    csv_muni <- read.csv("./TA_Subsidios_beneficios.csv", sep=";" , nrows=10)
     
   })
 }
