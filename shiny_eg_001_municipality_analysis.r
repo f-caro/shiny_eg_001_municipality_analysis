@@ -8,6 +8,7 @@ library(sf)
 
 #map of chile - comunas
 chile_comunas_shp <- st_read("chile_comunas_maps/comunas.shp")
+tmComunas <- tm_shape( chile_comunas_shp ) + tm_polygons() 
 
 
 #DPLYR ver of read.csv() # 
@@ -25,29 +26,39 @@ ui <- fluidPage(
   # App title ----
   titlePanel("Municipality Analysis"),
   
-  tmapOutput("tmap_chile_comunas"),
+  #error in ShapeFile processing in Shiny --- trying to plot it instead
+  #tmapOutput("tmap_chile_comunas"),
+  plotOutput(outputId = "tm_chile_comunas",
+             width = "100%",
+             height = "400px",
+             click = NULL,
+             dblclick = NULL,
+             hover = NULL,
+             brush = NULL,
+             inline = FALSE
+             ),
   
   #not working properly#  navbarMenu(title="Hello navbarMenu"),
 
-      # Input: select for the number of organismo_nombre ----
-      selectInput(inputId = "select_input_organismo_nombre",
-                  label = "List of Organizations",
-                  choices = select_input_startup ,
-                  #selected = select_input_startup[0]
-                  ),
-      
+  # Input: select for the number of organismo_nombre ----
+  selectInput(inputId = "select_input_organismo_nombre",
+              label = "List of Organizations",
+              choices = select_input_startup ,
+              #selected = select_input_startup[0]
+              ),
+  
 
-      sliderInput(inputId = "bins",
-                  label="slider Input box",
-                  min=1,
-                  max=50,
-                  value=25
-                        ),
-      # Output: Histogram ----
-      plotOutput(outputId = "distPlot"),
+  sliderInput(inputId = "bins",
+              label="slider Input box",
+              min=1,
+              max=50,
+              value=25
+                    ),
+  # Output: Histogram ----
+  plotOutput(outputId = "distPlot"),
 
-      
-      dataTableOutput(outputId = "dataTbl1")
+  
+  dataTableOutput(outputId = "dataTbl1")
 )
 
 
@@ -82,7 +93,12 @@ server <- function(input, output) {
     #csv_muni <- data.frame(csv_muni_ref)
   })
   
-  output$tmap_chile_comunas <- renderTmap({ tm_shape( chile_comunas_shp )  })
+  # error with shp file -leads to ::: Warning: Error in +.tmap: argument "e2" is missing, with no default
+  #output$tmap_chile_comunas <- renderTmap({ 
+  #  tm_shape( chile_comunas_shp ) 
+  #  + tm_polygons() 
+  #  })
+  output$tm_chile_comunas <- renderPlot({ tmComunas })
 }
 
 shinyApp(ui = ui, server = server)
