@@ -1,6 +1,14 @@
 library(shiny)
-library(arrow, warn.conflicts = FALSE)  # Add CSV speedups to script
+#library(arrow, warn.conflicts = FALSE)  # Add CSV speedups to script
 library(dplyr, warn.conflicts = FALSE)
+library(tmap)
+library(tmaptools)
+library(sf)
+
+
+#map of chile - comunas
+chile_comunas_shp <- st_read("chile_comunas_maps/comunas.shp")
+
 
 #DPLYR ver of read.csv() # 
 csv_muni_old <- read.csv("./TA_Subsidios_beneficios.csv", 
@@ -16,6 +24,8 @@ ui <- fluidPage(
   
   # App title ----
   titlePanel("Municipality Analysis"),
+  
+  tmapOutput("tmap_chile_comunas"),
   
   #not working properly#  navbarMenu(title="Hello navbarMenu"),
 
@@ -71,6 +81,8 @@ server <- function(input, output) {
     #csv_muni_ref <- data %>% head(10) %>% collect()
     #csv_muni <- data.frame(csv_muni_ref)
   })
+  
+  output$tmap_chile_comunas <- renderTmap({ tm_shape( chile_comunas_shp )  })
 }
 
 shinyApp(ui = ui, server = server)
