@@ -113,5 +113,5 @@ run_coords_fetch <- function( df ) {
   
 }
 
-write.csv( run_coords_fetch(organismos360) , "organismo360_updated.csv"  )
+write.csv( run_coords_fetch(organismos360) , "organismos360_updated.csv"  )
 
