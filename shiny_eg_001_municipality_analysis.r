@@ -5,10 +5,12 @@ library(tmap)
 library(tmaptools)
 library(sf)
 
+if(exists("st_ellide_rotate", mode = "function"))  source("utility_rotate_shp.r")
 
 #map of chile - comunas
 chile_comunas_shp <- st_read("chile_comunas_maps/comunas.shp")
-tmComunas <- tm_shape( chile_comunas_shp ) + tm_polygons() 
+comunas_rotated <- chile_comunas_shp %>%  st_ellide_rotate(-90)
+tmComunas <- tm_shape( comunas_rotated ) + tm_polygons() 
 
 
 #DPLYR ver of read.csv() # 
@@ -20,7 +22,7 @@ csv_muni_old <- read.csv("./TA_Subsidios_beneficios.csv",
 
 select_input_startup <- unique(csv_muni_old$organismo_nombre)
 
-# Define UI for app that draws a histogram ----
+# Define UI for the APP ----
 ui <- fluidPage(
   
   # App title ----
@@ -78,7 +80,7 @@ server <- function(input, output) {
 
   
   output$dataTbl1 <- renderDataTable({
-    #DPLYR ver of read.csv() # 
+    
     filtered_muni <- csv_muni_old %>% 
                     filter(  
                       organismo_nombre == input$select_input_organismo_nombre)
@@ -94,10 +96,7 @@ server <- function(input, output) {
   })
   
   # error with shp file -leads to ::: Warning: Error in +.tmap: argument "e2" is missing, with no default
-  #output$tmap_chile_comunas <- renderTmap({ 
-  #  tm_shape( chile_comunas_shp ) 
-  #  + tm_polygons() 
-  #  })
+  #output$tmap_chile_comunas <- renderTmap({ tm_shape( chile_comunas_shp ) + tm_polygons()})
   output$tm_chile_comunas <- renderPlot({ tmComunas })
 }
 
