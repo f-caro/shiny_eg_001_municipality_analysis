@@ -5,12 +5,13 @@ library(tmap)
 library(tmaptools)
 library(sf)
 
-if(exists("st_ellide_rotate", mode = "function"))  source("utility_rotate_shp.r")
+source("utility_rotate_shp.r")
+#if(exists("st_ellide_rotate", mode = "function"))  
 
 #map of chile - comunas
 chile_comunas_shp <- st_read("chile_comunas_maps/comunas.shp")
-comunas_rotated <- chile_comunas_shp %>%  st_ellide_rotate(-90)
-tmComunas <- tm_shape( comunas_rotated ) + tm_polygons() 
+#comunas_rotated <- chile_comunas_shp %>%  st_ellide_rotate(-90)
+tmComunas <- tm_shape( chile_comunas_shp ) + tm_polygons() 
 
 
 #DPLYR ver of read.csv() # 
@@ -31,8 +32,8 @@ ui <- fluidPage(
   #error in ShapeFile processing in Shiny --- trying to plot it instead
   #tmapOutput("tmap_chile_comunas"),
   plotOutput(outputId = "tm_chile_comunas",
-             width = "100%",
-             height = "400px",
+             width = "500%",
+             height = "10000px",
              click = NULL,
              dblclick = NULL,
              hover = NULL,
