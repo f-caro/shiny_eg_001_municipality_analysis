@@ -24,8 +24,14 @@ df_muni_subsidios_upd <- df_muni_subsidios %>%
              TOTAL_MONTO =  sum( monto_global), 
              LAT_LON = unique(lat_lon) 
             ) %>% 
-  mutate( LAT = as.numeric( str_split(LAT_LON, "," )[[1]] )  , 
-          LON = as.numeric( str_split(LAT_LON, "," )[[2]] ) 
+  mutate( LAT = as.numeric( str_split(LAT_LON, "," )[[1]][1] )  , 
+          LON = as.numeric( str_split(LAT_LON, "," )[[2]][1] ) 
+        )
+
+df_muni_subsidios_upd <- df_muni_subsidios_upd %>% 
+  rowwise() %>% 
+  mutate( LAT = as.numeric( str_split(LAT_LON, "," )[[1]][1] )  ,
+          LON = as.numeric( str_split(LAT_LON, "," )[[1]][2] )
         )
 
 
