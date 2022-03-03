@@ -3,6 +3,23 @@ library(dplyr, warn.conflicts = FALSE)
 library(leaflet)
 library(sf)
 
+chk_if_street_address <- function( dataStr ){
+  
+  dataStr <- str_trim(dataStr)
+  
+  if( is.na( dataStr ) )   {  return( 1 )  }          #chk if Empty
+  if( nchar(dataStr) <= 3 ) {  return(FALSE) }             #chk if low Char count  <--- nchar because len() is not same as C/Python/PHP etc
+  if( length( str_split(dataStr, " ")[[1]] )  < 2 )  { return(FALSE) }    #chk if low Word count
+  #Steps to chk for Phone Number
+  dataStr <- str_replace_all( dataStr, "[ ()]", "")         #replace all " ", "(" ,")" chars
+  #print(c(dataStr , str_detect( dataStr , '\\d{6,}')) )
+  if( str_detect( dataStr , '\\d{6,}') ) { return(FALSE) } #chk for 6 to 11 digit numbers
+  
+  return( TRUE )   #indicates Address Str found
+}
+
+
+
 #DPLYR ver of read.csv() # 
 df_muni_subsidios <- read.csv("./TA_Subsidios_beneficios.csv", 
                          sep=";" , 
