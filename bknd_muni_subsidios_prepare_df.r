@@ -83,7 +83,7 @@ leafletDfPrepwork <- function ( df_muni ){
 }
 
 
-main <- function() {
+main_bknd_muni_subsidios_prepare_df <- function() {
   df_muni <- loadSubsidiesXOrganismos( "./TA_Subsidios_beneficios.csv" , "organismos360_updated.csv"  )
   
   df_muni <- leafletDfPrepwork( df_muni )
@@ -100,8 +100,8 @@ main <- function() {
 
 # runs only when script is run by itself & in Interactive Mode
 if (getOption('run.main', default=TRUE)) {
-  main()
+  main_bknd_muni_subsidios_prepare_df()
   ## in parent script, so that main() does not execute:  
   ## options(run.main=FALSE)
-  ## source('thisscriptlocation.r')
+  ## source('bknd_muni_subsidios_prepare_df.r')
 }
