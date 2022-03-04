@@ -1,4 +1,4 @@
-gc()
+#gc()
 print(getwd())
 setwd(getwd())
 #setwd("/home/i7mintu/Documents/PROJECTS/R-ShinyProj/shiny_eg_001_municipality_analysis")
@@ -8,12 +8,19 @@ library(leaflet)
 #library(arrow, warn.conflicts = FALSE)  # Add CSV speedups to script
 
 
-options(run.main=FALSE)
-source("bknd_muni_subsidios_prepare_df.r", encoding = "UTF-8")
+#options(run.main=FALSE)
+#source("bknd_muni_subsidios_prepare_df.r", encoding = "UTF-8")
 
-df_muni <- loadSubsidiesXOrganismos( "./TA_Subsidios_beneficios.csv" , "organismos360_updated.csv"  )
 
-df_muni <- leafletDfPrepwork( df_muni )
+  df_muni_full <- readRDS(file = "df_muni_full.Rds")
+  df_muni_summary <- readRDS(file = "df_muni_summary.Rds")
+  df_muni <- readRDS(file = "df_muni_leaf.Rds")
+  ## Available in order to include CSV files from Dec, Jan, Feb ... etc
+  #df_muni_summary <- loadSubsidiesXOrganismos( "./TA_Subsidios_beneficios.csv" , "organismos360_updated.csv"  )
+  #df_muni <- leafletDfPrepwork( df_muni_summary )
+#}
+
+
 
 # Define UI for the APP ----
 ui <- bootstrapPage(
