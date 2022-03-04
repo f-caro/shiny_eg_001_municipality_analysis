@@ -1,4 +1,6 @@
 #!/usr/bin/Rscript
+print(getwd())
+setwd(getwd())
 
 library(dplyr, warn.conflicts = FALSE)
 library(leaflet)
@@ -27,12 +29,8 @@ factorAmountType <- function( dataStr ){
 
 loadSubsidiesXOrganismos <- function( govSubCsvLocation , orgCsvLocation ){
   #STEP 1.1:  load Government Subsidies supplied CSV file
-  #DPLYR ver of read.csv() # 
-  df_muni_subsidios <- read.csv( govSubCsvLocation, #"./TA_Subsidios_beneficios.csv", 
-                                sep=";" , 
-                                #nrows=10,
-                                encoding="latin1" ,
-                                )
+  df_muni_subsidios <- loadFullSubsidies( govSubCsvLocation )
+    
   #STEP 1.2:  load Government Organizations table, updated with LAT_LON coords
   df_org_upd <- read.csv( orgCsvLocation ) #"organismos360_updated.csv")
   
@@ -66,6 +64,16 @@ loadSubsidiesXOrganismos <- function( govSubCsvLocation , orgCsvLocation ){
   return( df_muni_subsidios_upd )
 }
 
+loadFullSubsidies <- function( govSubCsvLocation){
+  df <- read.csv( govSubCsvLocation, #"./TA_Subsidios_beneficios.csv", 
+                  sep=";" , 
+                  #nrows=10,
+                  encoding="latin1" ,
+                )
+  return(df)
+}
+
+
 leafletDfPrepwork <- function ( df_muni ){
   #STEP 2.4: Gov Subsidies df prep work for Leaflet Map columns
   df_muni <- df_muni %>% 
@@ -83,13 +91,10 @@ leafletDfPrepwork <- function ( df_muni ){
 }
 
 
-main_bknd_muni_subsidios_prepare_df <- function() {
-  df_muni <- loadSubsidiesXOrganismos( "./TA_Subsidios_beneficios.csv" , "organismos360_updated.csv"  )
-  
-  df_muni <- leafletDfPrepwork( df_muni )
+main_bknd_muni_subsidios_prepare_df <- function( df ) {
   
   #STEP 3.0: Leaflet preview output
-  leafMap <- leaflet(data = df_muni ) %>%
+  leafMap <- leaflet(data = df ) %>%
     setView(lat = -36.82699, lng = -73.04977, zoom = 3) %>%
     addTiles() %>%
     addCircleMarkers(~LON, ~LAT, popup =  ~MSG_SUMMARY,  label=~MSG_SUMMARY )
@@ -97,11 +102,20 @@ main_bknd_muni_subsidios_prepare_df <- function() {
 
 }
 
+df_muni_full <- loadFullSubsidies( "TA_Subsidios_beneficios.csv" )
+saveRDS(df_muni_full, file = "df_muni_full.Rds")
+  
+df_muni_summary <- loadSubsidiesXOrganismos( "TA_Subsidios_beneficios.csv" , "organismos360_updated.csv"  )
+saveRDS(df_muni_summary, file = "df_muni_summary.Rds")
+  
+df_muni_leaf <- leafletDfPrepwork( df_muni_summary )
+saveRDS(df_muni_leaf, file = "df_muni_leaf.Rds")
+  
 
 # runs only when script is run by itself & in Interactive Mode
-if (getOption('run.main', default=TRUE)) {
-  main_bknd_muni_subsidios_prepare_df()
+#if (getOption('run.main', default=TRUE)) {
+  ### lets not run for now::::   main_bknd_muni_subsidios_prepare_df( df_muni_leaf  )
   ## in parent script, so that main() does not execute:  
   ## options(run.main=FALSE)
   ## source('bknd_muni_subsidios_prepare_df.r')
-}
+#}
