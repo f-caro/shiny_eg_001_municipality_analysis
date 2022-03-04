@@ -19,28 +19,31 @@ df_muni <- leafletDfPrepwork( df_muni )
 ui <- bootstrapPage(
   # App title ----
   titlePanel("Chile Subsidies Nov 2021 Analysis"),
+  
   leafletOutput(outputId = "leafletMap" , width = "100%", height = "800px"), # height= 100% doesn't pass through
-  
-  modalDialog(
-    dataTableOutput(outputId = "dataTbl1") ,   
-    title = "This is a Modal",
-    footer = modalButton("Dismiss"),
-    size = "xl",
-    easyClose = FALSE,
-    fade = TRUE
-  ),
-  
-  dataTableOutput(outputId = "dataTbl1"),
-  
+ 
+  dataTableOutput(outputId = "dataTbl2"),
 )
 
 
 # Define server logic required to draw a histogram ----
 server <- function(input, output) {
 
-  output$dataTbl1 <- renderDataTable({
-    filtered_muni <- df_muni %>% 
-      filter(  ORG_NOMBRE == "Municipalidad de Osorno"  )
+  observeEvent(input$leafletMap_marker_click, {
+    click <- input$leafletMap_marker_click
+    print(paste0("clicked ::: ", click ) )
+    selected <- df_muni%>% filter(  ORG_NOMBRE == click[1]  )
+    
+    output$dataTbl1 = renderDataTable({  selected    }) 
+    
+    showModal(modalDialog(
+      dataTableOutput(outputId = "dataTbl1") ,   
+      title = click[1],
+      footer = modalButton("Dismiss"),
+      size = "xl" ,
+      easyClose = FALSE,
+      fade = TRUE
+    ))
   })
   
   output$leafletMap <- renderLeaflet({
@@ -48,7 +51,7 @@ server <- function(input, output) {
       setView(lat = -36.82699, lng = -73.04977, zoom = 3) %>% 
       addProviderTiles(providers$CartoDB.Positron) %>%
       addTiles() %>%
-      addCircleMarkers(~LON, ~LAT, popup =  ~MSG_SUMMARY,  label=~MSG_SUMMARY )
+      addCircleMarkers(~LON, ~LAT, popup =  ~MSG_SUMMARY,  label=~MSG_SUMMARY , layerId = ~ORG_NOMBRE )
   })
 }
 
