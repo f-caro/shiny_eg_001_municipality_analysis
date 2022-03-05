@@ -1,4 +1,5 @@
 #!/usr/bin/Rscript
+ptm <- proc.time()
 print(getwd())
 setwd(getwd())
 
@@ -57,7 +58,7 @@ loadSubsidiesXOrganismos <- function( govSubCsvLocation , orgCsvLocation ){
     group_by( organismo_codigo) %>% 
     summarise( ORG_NOMBRE = unique(organismo_nombre) ,
                COUNT_N = n(), 
-               TOTAL_MONTO =  sum( monto_global), 
+               TOTAL_MONTO =  sum( monto_global),
                LAT_LON = unique(lat_lon)
               )
   
@@ -75,11 +76,15 @@ loadFullSubsidies <- function( govSubCsvLocation){
 
 
 leafletDfPrepwork <- function ( df_muni ){
-  #STEP 2.4: Gov Subsidies df prep work for Leaflet Map columns
+  #STEP 2.4: Gov Subsidies df prep work for Leaflet Map column
+  MAX_TOTAL_MONTO <- max( df_muni$TOTAL_MONTO, na.rm=TRUE )
+  MAX_COUNT_N <- max(df_muni$COUNT_N, na.rm=TRUE )
   df_muni <- df_muni %>% 
     rowwise() %>% 
     mutate( LAT = as.numeric( str_split(LAT_LON, "," )[[1]][1] ) ,
             LON = as.numeric( str_split(LAT_LON, "," )[[1]][2] ) ,
+            CIRCLE_RADIUS_MONTO_TOTAL = ceiling( 100 * TOTAL_MONTO / MAX_TOTAL_MONTO ) , 
+            CIRCLE_RADIUS_COUNT_N = ceiling( 100 * COUNT_N / MAX_COUNT_N) , 
             MSG_SUMMARY = str_c( ORG_NOMBRE , "::: Entries: " , COUNT_N, " - Total: ",  
                                  format( TOTAL_MONTO, 
                                          scientific = FALSE, 
@@ -119,3 +124,6 @@ saveRDS(df_muni_leaf, file = "df_muni_leaf.Rds")
   ## options(run.main=FALSE)
   ## source('bknd_muni_subsidios_prepare_df.r')
 #}
+
+#measure Time taken to process this script
+proc.time() - ptm
