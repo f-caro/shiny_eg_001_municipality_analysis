@@ -6,6 +6,7 @@ setwd(getwd())
 library(shiny)
 library(leaflet)
 library(dplyr, warn.conflicts = FALSE )
+library(stringr)
 #library(arrow, warn.conflicts = FALSE)  # Add CSV speedups to script
 
 
@@ -21,6 +22,10 @@ df_muni <- readRDS(file = "df_muni_leaf.Rds")
   #df_muni <- leafletDfPrepwork( df_muni_summary )
 
 
+iconQuestionMarkPng <- makeIcon(
+  iconUrl = "question-circle-o.png",
+  iconWidth = 24, iconHeight = 24
+)
 
 
 # Define UI for the APP ----
@@ -29,6 +34,11 @@ ui <- bootstrapPage(
   h1("Chile Subsidies Nov 2021 Analysis"),
   actionButton(inputId = "buttonCount_n", label = "Relative to #Entries" ),
   actionButton(inputId = "buttonTotalMonto", label = "Relative to #Money" ),
+  actionButton(inputId = "buttonFilterOnlyMuni", label = "Show only by MUNICIPALITY\'s" ),
+  actionButton(inputId = "buttonFilterOnlySubsec", label = "Show only Office Subsecretaries" ),
+  actionButton(inputId = "buttonFilterOnlyGov", label = "Show only Office Government" ),
+  actionButton(inputId = "buttonFilterOnlyUniversity", label = "Show only by Universities" ),
+  actionButton(inputId = "buttonFilterEverthing", label = "Show ALL" ),
   
   leafletOutput(outputId = "leafletMap" , width = "100%", height = "800px"), # height= 100% doesn't pass through
  
@@ -49,10 +59,19 @@ server <- function(input, output) {
    )
   }
    
-  changeRadiusVectorSrc <- function( radiusChosen)
+  changeRadiusVectorSrc <- function( radiusChosen , filterByStr )
   {
-    leafletProxy("leafletMap", data = df_muni) %>%
-      clearShapes() %>%
+    filtered_df <- df_muni %>% filter( str_detect( str_to_upper(ORG_NOMBRE) , filterByStr ) )
+    leafletProxy("leafletMap", data = filtered_df  ) %>%
+      clearMarkers() %>%
+      addMarkers(
+        ~LON, ~LAT,
+        icon = iconQuestionMarkPng,  
+        popup = ~MSG_SUMMARY,  
+        label = ~MSG_SUMMARY , 
+        layerId = ~ORG_NOMBRE ,
+        data = filtered_df %>% filter( is.na(TOTAL_MONTO)  ),
+      ) %>% 
       addCircleMarkers(
         ~LON, ~LAT, 
         popup = ~MSG_SUMMARY,  
@@ -62,15 +81,36 @@ server <- function(input, output) {
         #radius = switch( radiusChosen, ~CIRCLE_RADIUS_MONTO_TOTAL, ~CIRCLE_RADIUS_COUNT_N ),    # works !!
         #radius = if( radiusChosen > 0) {  ~CIRCLE_RADIUS_MONTO_TOTAL} else { ~CIRCLE_RADIUS_COUNT_N  } , # also works!!
         stroke = FALSE, fillOpacity = 0.5,
+        data = filtered_df %>% filter( !is.na(TOTAL_MONTO)  )
       )
   }
 
   observeEvent(input$buttonTotalMonto, {
-    changeRadiusVectorSrc(1)
+    changeRadiusVectorSrc(1 , "")
   }, ignoreNULL = TRUE)
 
   observeEvent(input$buttonCount_n, {
-    changeRadiusVectorSrc(2)
+    changeRadiusVectorSrc(2 , "" )
+  }, ignoreNULL = TRUE)
+  
+  observeEvent(input$buttonFilterOnlyMuni, {
+    changeRadiusVectorSrc(2, "MUNICIPAL")
+  }, ignoreNULL = TRUE)
+  
+  observeEvent(input$buttonFilterOnlyUniversity, {
+    changeRadiusVectorSrc(2, "UNIVERSIDAD")
+  }, ignoreNULL = TRUE)
+  
+  # observeEvent(input$buttonFilterOnlySubsec, {
+  #   changeRadiusVectorSrc(2, "SUBSEC")
+  # }, ignoreNULL = TRUE)
+  # 
+  # observeEvent(input$buttonFilterOnlyGov, {
+  #   changeRadiusVectorSrc(2, "GOBIERNO")
+  # }, ignoreNULL = TRUE)
+  
+  observeEvent(input$buttonFilterEverthing, {
+    changeRadiusVectorSrc(2, "")
   }, ignoreNULL = TRUE)
   
   observeEvent(input$leafletMap_marker_click, {
@@ -99,15 +139,27 @@ server <- function(input, output) {
       setView(lat = -36.82699, lng = -73.04977, zoom = 10) %>% 
       addTiles() %>%
       addMiniMap( position = "bottomleft", zoomAnimation = TRUE , zoomLevelOffset = -4) %>%
-      addProviderTiles(providers$CartoDB.Positron) %>%
+      addProviderTiles(providers$CartoDB.Positron)  %>%
+      addMarkers(
+          ~LON, ~LAT,
+          #icon = if( is.na( ~TOTAL_MONTO ) ) { leafletIcon } else { NULL } ,
+          icon = iconQuestionMarkPng,
+          popup = ~MSG_SUMMARY,
+          label = ~MSG_SUMMARY ,
+          layerId = ~ORG_NOMBRE ,
+          data = df_muni %>% filter( is.na(TOTAL_MONTO)  ),
+          ) %>%
       addCircleMarkers(
-        ~LON, ~LAT, 
-        popup = ~MSG_SUMMARY,  
-        label = ~MSG_SUMMARY , 
+        ~LON, ~LAT,
+        popup = ~MSG_SUMMARY,
+        label = ~MSG_SUMMARY ,
         layerId = ~ORG_NOMBRE ,
         radius = radiusColSrcName(1),      #radius = ~CIRCLE_RADIUS_MONTO_TOTAL,
         stroke = FALSE, fillOpacity = 0.5,
-        )
+        data = df_muni %>% filter( !is.na(TOTAL_MONTO) ),
+      )
+
+      #### tried to remove addMarkers() and addCircleMarkers in order to just run function -->   changeRadiusVectorSrc(1)  --- did NOT work
   })
   
 }
