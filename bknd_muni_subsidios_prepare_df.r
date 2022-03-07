@@ -28,44 +28,27 @@ factorAmountType <- function( dataStr ){
 }
 
 
-loadSubsidiesXOrganismos <- function( govSubCsvLocation , orgCsvLocation ){
+processSubsidiesXOrganismos <- function( govSubCsvLocation , orgCsvLocation , dismissNAs = FALSE){
   #STEP 1.1:  load Government Subsidies supplied CSV file
   df_muni_subsidios <- loadFullSubsidies( govSubCsvLocation )
     
   #STEP 1.2:  load Government Organizations table, updated with LAT_LON coords
-  df_org_upd <- read.csv( orgCsvLocation ) #"organismos360_updated.csv")
+  df_org_upd <- loadOrgDataUpdatedWithCoords( orgCsvLocation )
   
   #STEP 2.1:  factor multiply Money col relative to TypeOfMonetaryUnit
-  df_muni_subsidios <- df_muni_subsidios %>% 
-    rowwise() %>% 
-    mutate( NewAmount = 
-              format( 
-                factorAmountType( Tipo.Unidad.monetaria ) * monto_global , 
-                scientific = FALSE, big.mark = ","
-                ) 
-            ) 
-    ### visual inspection --> %>% select( monto_global , Tipo.Unidad.monetaria , NewAmount    ) 
+  df_muni_subsidios <- fixTipoUnidadMonetariaCol( df_muni_subsidios )
   
   #STEP 2.2:  Filter Government Organization df to include only lat_lon non-empty entries
-  df_org_upd_filtered <- 
-    df_org_upd %>% 
-    filter( .$addrChk == TRUE , .$lat_lon != "" ) %>% 
-    select( Codigo_org , lat_lon )
-  
+  df_org_upd_filtered <- filterOrgDataByValidCoords(df_org_upd)
+
   #STEP 2.3: Combine Gov Subsidies with Gov Org df's
-  df_muni_subsidios_upd <- df_muni_subsidios %>% 
-    inner_join(df_org_upd_filtered, by = c( "organismo_codigo" = "Codigo_org")) %>%  
-    group_by( organismo_codigo) %>% 
-    summarise( ORG_NOMBRE = unique(organismo_nombre) ,
-               COUNT_N = n(), 
-               TOTAL_MONTO =  sum( monto_global),
-               LAT_LON = unique(lat_lon)
-              )
-  
+  df_muni_subsidios_upd <- innerJoinSubsidiesWithOrgData( df_muni_subsidios, df_org_upd_filtered , removeNAs = dismissNAs  )
+
   return( df_muni_subsidios_upd )
 }
 
-loadFullSubsidies <- function( govSubCsvLocation){
+loadFullSubsidies <- function( govSubCsvLocation){ 
+  ##STEP 1.1:  load Government Subsidies supplied CSV file
   df <- read.csv( govSubCsvLocation, #"./TA_Subsidios_beneficios.csv", 
                   sep=";" , 
                   #nrows=10,
@@ -74,6 +57,49 @@ loadFullSubsidies <- function( govSubCsvLocation){
   return(df)
 }
 
+loadOrgDataUpdatedWithCoords <- function ( orgCsvLocation ){ 
+  ##STEP 1.2:  load Government Organizations table, updated with LAT_LON coords
+  df_org_upd <- read.csv( orgCsvLocation ) #"organismos360_updated.csv")
+  return( df_org_upd )
+}
+
+fixTipoUnidadMonetariaCol <- function ( df_full ){
+  #STEP 2.1:  factor multiply Money col relative to TypeOfMonetaryUnit
+  df_muni_subsidios <- df_full %>% 
+    rowwise() %>% 
+    mutate( NewAmount = 
+              format( 
+                factorAmountType( Tipo.Unidad.monetaria ) * monto_global , 
+                scientific = FALSE, big.mark = ","
+              ) 
+    ) 
+  ### visual inspection --> %>% select( monto_global , Tipo.Unidad.monetaria , NewAmount    ) 
+  return(df_muni_subsidios)
+}
+  
+filterOrgDataByValidCoords <- function( df_org )
+{
+  #STEP 2.2:  Filter Government Organization df to include only lat_lon non-empty entries
+  df_org_upd_filtered <- 
+    df_org %>% 
+    filter( .$addrChk == TRUE , .$lat_lon != "" ) %>% 
+    select( Codigo_org , lat_lon )
+  return(df_org_upd_filtered)
+}
+
+innerJoinSubsidiesWithOrgData <- function ( df_subsidies, df_org , removeNAs = false  )
+{
+  #STEP 2.3: Combine Gov Subsidies with Gov Org df's
+  df_muni_subsidios_upd <- df_subsidies %>% 
+    inner_join(df_org, by = c( "organismo_codigo" = "Codigo_org")) %>%  
+    group_by( organismo_codigo) %>% 
+    summarise( ORG_NOMBRE = unique(organismo_nombre) ,
+               COUNT_N = n(), 
+               TOTAL_MONTO =  sum( monto_global , na.rm= removeNAs ),
+               LAT_LON = unique(lat_lon)
+    )
+  return(df_muni_subsidios_upd)
+}
 
 leafletDfPrepwork <- function ( df_muni ){
   #STEP 2.4: Gov Subsidies df prep work for Leaflet Map column
@@ -107,14 +133,31 @@ main_bknd_muni_subsidios_prepare_df <- function( df ) {
 
 }
 
-df_muni_full <- loadFullSubsidies( "TA_Subsidios_beneficios.csv" )
-saveRDS(df_muni_full, file = "df_muni_full.Rds")
+main_recalc_df_muni_df_summary_df_muni_leaf_RDSfiles <- function ()
+{
+  ptm <- proc.time()
+  print(paste0("started function::: main_recalc_df_muni_df_summary_df_muni_leaf_RDSfiles"))
+  df_muni_full <- loadFullSubsidies( "TA_Subsidios_beneficios.csv" )
+  saveRDS(df_muni_full, file = "df_muni_full.Rds")
+    
+  df_muni_summary <- processSubsidiesXOrganismos( "TA_Subsidios_beneficios.csv" , 
+                                               "organismos360_updated.csv" , 
+                                               dismissNAs=FALSE  )
+  saveRDS(df_muni_summary, file = "df_muni_summary.Rds")  
   
-df_muni_summary <- loadSubsidiesXOrganismos( "TA_Subsidios_beneficios.csv" , "organismos360_updated.csv"  )
-saveRDS(df_muni_summary, file = "df_muni_summary.Rds")
+  df_muni_summary_dismissNAs <- processSubsidiesXOrganismos( "TA_Subsidios_beneficios.csv" , 
+                                                          "organismos360_updated.csv" , 
+                                                          dismissNAs=TRUE  )
+  saveRDS(df_muni_summary_dismissNAs, file = "df_muni_summary_dismissNAs.Rds")
+    
+  df_muni_leaf <- leafletDfPrepwork( df_muni_summary )
+  saveRDS(df_muni_leaf, file = "df_muni_leaf.Rds")
   
-df_muni_leaf <- leafletDfPrepwork( df_muni_summary )
-saveRDS(df_muni_leaf, file = "df_muni_leaf.Rds")
+  #measure Time taken to process this script
+  
+  print(paste0("ended function::: main_recalc_df_muni_df_summary_df_muni_leaf_RDSfiles"))
+  proc.time() - ptm
+}
   
 
 # runs only when script is run by itself & in Interactive Mode
