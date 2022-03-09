@@ -29,34 +29,56 @@ iconQuestionMarkPng <- makeIcon(
   iconWidth = 24, iconHeight = 24
 )
 
+region_list<- unique( chile_comunas_shp_joined$REGION )
 
 # Define UI for the APP ----
-ui <- bootstrapPage(
+ui <- fluidPage(
   # App title ----
   h1("Chile Subsidies Nov 2021 Analysis"),
-  #actionButton(inputId = "buttonCount_n", label = "Relative to #Entries" ),
-  #actionButton(inputId = "buttonTotalMonto", label = "Relative to #Money" ),
- radioButtons("inRadioEntriesOrMoney", "Data points relative to:",
+  radioButtons("inRadioEntriesOrMoney", "Circle Sizes relative to:",
                inline=TRUE,
                choiceNames= c("Number of Entries", "Amount of Money"),
                choiceValues= c(1,2),
-               ) ,
-  checkboxGroupInput("chkboxGrpPtSubsets", "Filter by:",
+  ) ,
+  checkboxGroupInput("chkboxGrpPtSubsets", "Filter Circle Data Points by:",
                      choiceNames =  list("Municipalities", "Universities", "Subsecretary Offices", "Government Offices"),
                      choiceValues = list("MUNICIPAL", "UNIVERSIDAD", "SUBSEC", "GOBIERNO"),
                      inline=TRUE,
                      selected="as.character(0)"
-                     ),
-  # actionButton(inputId = "buttonFilterOnlyMuni", label = "Show only by MUNICIPALITY\'s" ),
-  # actionButton(inputId = "buttonFilterOnlySubsec", label = "Show only Office Subsecretaries" ),
-  # actionButton(inputId = "buttonFilterOnlyGov", label = "Show only Office Government" ),
-  # actionButton(inputId = "buttonFilterOnlyUniversity", label = "Show only by Universities" ),
-  # actionButton(inputId = "buttonFilterEverthing", label = "Show ALL" ),
-  actionButton(inputId = "buttonInsertRegionNuble", label = "Insert Region BioBio Layer" ),
-  
+  ),
   leafletOutput(outputId = "leafletMap" , width = "100%", height = "800px"), # height= 100% doesn't pass through
+  
+  # sidebarLayout(
+  #   sidebarPanel( width = 3, 
+  #   #actionButton(inputId = "buttonCount_n", label = "Relative to #Entries" ),
+  #   radioButtons("inRadioEntriesOrMoney", "Circle Sizes relative to:",
+  #                inline=TRUE,
+  #                choiceNames= c("Number of Entries", "Amount of Money"),
+  #                choiceValues= c(1,2),
+  #                ) ,
+  #   checkboxGroupInput("chkboxGrpPtSubsets", "Filter Circle Data Points by:",
+  #                      choiceNames =  list("Municipalities", "Universities", "Subsecretary Offices", "Government Offices"),
+  #                      choiceValues = list("MUNICIPAL", "UNIVERSIDAD", "SUBSEC", "GOBIERNO"),
+  #                      inline=TRUE,
+  #                      selected="as.character(0)"
+  #                      ),
+  #   # actionButton(inputId = "buttonFilterOnlyMuni", label = "Show only by MUNICIPALITY\'s" ),
+  #   #actionButton(inputId = "buttonInsertRegionNuble", label = "Insert Region BioBio Layer" ),
+  #   # checkboxGroupInput("chkboxGrpAreaPerRegion", "Show Total Money Subsidied by Region",
+  #   #                    choiceNames =  region_list[2:length(region_list)],
+  #   #                    choiceValues = region_list[2:length(region_list)],  #Avoids NA in 1st entry
+  #   #                    selected="Región Del Biobío"
+  #   #                    ),
+  #   ),
+  # mainPanel( width = 9,
+  #   leafletOutput(outputId = "leafletMap" , width = "100%", height = "800px"), # height= 100% doesn't pass through
+  #   )
+  # ),
  
-  dataTableOutput(outputId = "dataTbl2"),
+  #dataTableOutput(outputId = "dataTbl2"),
+  
+  h4("Source : https://www.portaltransparencia.cl/opendata/dataset/transparencia-activa-publicada-en-el-portal"),
+  h5("CSV Source : https://www.cplt.cl/transparencia_activa/datoabierto/archivos/TA_Subsidios_beneficios.csv")
 )
 
 radiusChosen <- 0
@@ -108,21 +130,56 @@ server <- function(input, output, session) {
     }
   }
 
-  observeEvent(input$buttonInsertRegionNuble, {
-    filtered_data <- chile_comunas_shp_joined %>%  filter( REGION == "Región Del Biobío") 
+  addPolygonsByGroupToLeaflet <- function( groupNameStr ){
+    filtered_data <- chile_comunas_shp_joined %>%  
+      filter( str_detect( REGION , groupNameStr ) ) #"Región Del Biobío|Región De Ñuble")
     leafletProxy("leafletMap", data = filtered_data ) %>%
+      #removeGroup("Región Del Biobío")%>%
       addPolygons( color = "#444444", weight = 1, smoothFactor = 0.5,
+                   #layerId = "polygonRegions",
+                   group= groupNameStr ,
                    opacity = 1.0, fillOpacity = 0.5,
                    fillColor = ~colorQuantile("YlOrRd", TOTAL_MONTO_PER_COMUNA)(TOTAL_MONTO_PER_COMUNA),
                    highlightOptions = highlightOptions(color = "white", weight = 2,
                                                        bringToFront = TRUE),
-                   label = ~str_c(Comuna, " - CLP $ " , format( TOTAL_MONTO_PER_COMUNA, 
-                                                                scientific = FALSE, 
+                   label = ~str_c(Comuna, " - CLP $ " , format( TOTAL_MONTO_PER_COMUNA,
+                                                                scientific = FALSE,
                                                                 big.mark = ","
                    )
                    ),
+                   options = pathOptions(pane = "layer2")
       )
-  }, ignoreNULL = TRUE)
+    
+    # if( is.na(groupNameStr) | str_detect( groupNameStr , "Región Del Biobío" ) ){
+    #   print(paste0("found Group RegionBioBio"))
+    # }else {
+    #   leafletProxy("leafletMap", data = filtered_data ) %>% hideGroup( group= as.character(groupNameStr) )
+    #   }
+  }
+  
+  # observe({
+  #   chkboxGrpAreaPerRegionStr <- paste(input$chkboxGrpAreaPerRegion, collapse = "|")
+  #   print(paste0("You chose: ", chkboxGrpAreaPerRegionStr))
+  #   
+  #   filtered_data <- chile_comunas_shp_joined %>%  
+  #     filter( str_detect( REGION , chkboxGrpAreaPerRegionStr ) ) #"Región Del Biobío|Región De Ñuble")
+  #   leafletProxy("leafletMap", data = filtered_data ) %>%
+  #     #removeGroup("Región Del Biobío")%>%
+  #     addPolygons( color = "#444444", weight = 1, smoothFactor = 0.5,
+  #                  #layerId = "polygonRegions",
+  #                  group="Región Del Biobío",
+  #                  opacity = 1.0, fillOpacity = 0.5,
+  #                  fillColor = ~colorQuantile("YlOrRd", TOTAL_MONTO_PER_COMUNA)(TOTAL_MONTO_PER_COMUNA),
+  #                  highlightOptions = highlightOptions(color = "white", weight = 2,
+  #                                                      bringToFront = TRUE),
+  #                  label = ~str_c(Comuna, " - CLP $ " , format( TOTAL_MONTO_PER_COMUNA,
+  #                                                               scientific = FALSE,
+  #                                                               big.mark = ","
+  #                                                               )
+  #                                 ),
+  #                  options = pathOptions(pane = "layer2")
+  #                  )
+  #   })
   
   observe({
     radiusChosen <- input$inRadioEntriesOrMoney
@@ -209,10 +266,24 @@ server <- function(input, output, session) {
         stroke = FALSE, fillOpacity = 0.5,
         data = df_muni_leaf %>% filter( !is.na(TOTAL_MONTO) ),
         options = pathOptions(pane = "layerTop"),
-      )
+      ) %>%
+      addLayersControl(
+        baseGroups = c("OSM (default)"),
+        position= "topleft",
+        overlayGroups = region_list[2:length(region_list)],
+        options = layersControlOptions(collapsed = FALSE  ),
+        
+      )%>% 
+      hideGroup( group= as.character( region_list[2:10]  )  )  %>%
+      hideGroup( group= as.character( region_list[12:length(region_list)]  )  )
 
       #### tried to remove addMarkers() and addCircleMarkers in order to just run function -->   changeRadiusVectorSrc(1)  --- did NOT work
   })
+  
+  for (i in 1:length(region_list)) {
+    print(paste0( region_list[[i]] ) ) 
+    addPolygonsByGroupToLeaflet(region_list[[i]])
+  }
   
 }
 
