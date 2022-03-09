@@ -71,7 +71,7 @@ ui <- bootstrapPage(
 )
 
   #tmap_mode("plot")
-  tmap_options(check.and.fix = TRUE)
+  #tmap_options(check.and.fix = TRUE)
   #tm_map <- tm_shape(chile_comunas_shp) +  tm_polygons("Comuna") 
   
   #Howto filter out Bio-Bio region---  use levels(chile_comunas_shp$Region)  to identify uniques
