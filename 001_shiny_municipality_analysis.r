@@ -8,11 +8,8 @@ library(leaflet)
 library(dplyr, warn.conflicts = FALSE )
 library(stringr)
 #library(arrow, warn.conflicts = FALSE)  # Add CSV speedups to script
-
-
 #options(run.main=FALSE)
 #source("bknd_muni_subsidios_prepare_df.r", encoding = "UTF-8")
-
 
 df_muni_full <- readRDS(file = "df_muni_full.Rds")
 df_muni_summary <- readRDS(file = "df_muni_summary.Rds")
@@ -24,12 +21,29 @@ df_muni_leaf <- readRDS(file = "df_muni_leaf.Rds")
 chile_comunas_shp_joined <- readRDS(file = "chile_comunas_shp_joined.Rds")
 chile_comunas_shp_joined <- chile_comunas_shp_joined %>% sf::st_transform('+proj=longlat +datum=WGS84')
 
+region_list<-unique( chile_comunas_shp_joined$REGION ) 
+
+# old_position <- which( str_detect( region_list , "Biob" ) )
+# temp_item <- region_list[[2]]
+# region_list[2] <- region_list[ old_position ]
+# region_list[old_position] <- temp_item
+
+util_swap_region_position_in_list <- function( listOfRegions , partialStr ){
+  old_position <- which( str_detect( listOfRegions , partialStr )  ) #"Biob" ) )
+  old_item <- listOfRegions[[2]]
+  listOfRegions[2] <- listOfRegions[ old_position ]
+  listOfRegions[old_position] <- old_item
+  
+  return(listOfRegions)
+}
+
+region_list<- util_swap_region_position_in_list( region_list, "Biob" )
+
 iconQuestionMarkPng <- makeIcon(
   iconUrl = "question-circle-o.png",
   iconWidth = 24, iconHeight = 24
 )
 
-region_list<- unique( chile_comunas_shp_joined$REGION )
 
 # Define UI for the APP ----
 ui <- fluidPage(
@@ -225,7 +239,7 @@ server <- function(input, output, session) {
     summary_selected <- df_muni_leaf %>% filter( ORG_NOMBRE == click[1]  )
     filtered_full <- df_muni_full %>% filter(organismo_codigo == as.character( summary_selected$organismo_codigo ) )
     
-    output$dataTbl1 = renderDataTable({  filtered_full    }) 
+    output$dataTbl1 <- renderDataTable({  filtered_full    }) 
     
     showModal(modalDialog(
       {
@@ -274,8 +288,9 @@ server <- function(input, output, session) {
         options = layersControlOptions(collapsed = FALSE  ),
         
       )%>% 
-      hideGroup( group= as.character( region_list[2:10]  )  )  %>%
-      hideGroup( group= as.character( region_list[12:length(region_list)]  )  )
+      hideGroup( group= as.character( region_list[3:length(region_list)]  )  )  
+      #%>%
+      #hideGroup( group= as.character( region_list[12:length(region_list)]  )  )
 
       #### tried to remove addMarkers() and addCircleMarkers in order to just run function -->   changeRadiusVectorSrc(1)  --- did NOT work
   })
