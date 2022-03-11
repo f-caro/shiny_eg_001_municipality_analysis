@@ -7,6 +7,8 @@ library(shiny)
 library(leaflet)
 library(dplyr, warn.conflicts = FALSE )
 library(stringr)
+library(reactable)
+
 #library(arrow, warn.conflicts = FALSE)  # Add CSV speedups to script
 #options(run.main=FALSE)
 #source("bknd_muni_subsidios_prepare_df.r", encoding = "UTF-8")
@@ -239,12 +241,92 @@ server <- function(input, output, session) {
     summary_selected <- df_muni_leaf %>% filter( ORG_NOMBRE == click[1]  )
     filtered_full <- df_muni_full %>% filter(organismo_codigo == as.character( summary_selected$organismo_codigo ) )
     
-    output$dataTbl1 <- renderDataTable({  filtered_full    }) 
+    output$dataTbl1 <- renderReactable({
+      reactable( filtered_full, 
+                 #filterable = TRUE, #rather ugly, since it goes to each column
+                 #minRows = 10, 
+                 showPageSizeOptions = TRUE, pageSizeOptions = c(10, 25, 100, 1000), defaultPageSize = 10 , 
+                 highlight = TRUE,
+                 searchable = TRUE,   #much better, since it auto searches in all columns
+                 defaultExpanded = TRUE,
+                 details = colDef(
+                   name = "Mas Info",
+                   details = JS("function(rowInfo) {
+                                console.log(rowInfo);
+                                return '<div> <b>Numero de Acto: </b>' + rowInfo.original.numero_acto + '</div>' +
+                                '<div><b>Año: </b>' + rowInfo.original.anyo + '   <b>Mes: </b>' + rowInfo.original.Mes + '</div>' +
+                                '<div><b>Fecha de Acto: </b>' + rowInfo.original.fecha_acto + '</div>' +
+                                '<div><b>Requisitos: </b>' + rowInfo.original.requisitos + '</div>' +
+                                '<div><b>Periodo Inicio: </b>' + rowInfo.original.periodo_inicio + '  <b>Fin : </b>' + rowInfo.original.periodo_fin + '</div>' +
+                                '<div><b>Criterio de Evaluacion: </b>' + rowInfo.original.criterio_evaluacion + '</div>' +
+                                '<div><b>Plazos Asociados: </b>' + rowInfo.original.plazos_asociados + '</div>' +
+                                '<div><b>Objetivo: </b>' + rowInfo.original.objetivo + '</div>' +
+                                '<div><b>Tipo Acto: </b>' + rowInfo.original[\"Tipo.Acto\"] + '</div>' +
+                                '<div><b>Denominacion de Acto: </b>' + rowInfo.original.denominacion_acto + '</div>' +
+                                '<div><b>Numero Acto: </b>' + rowInfo.original.numero_acto + '</div>'  +
+                                '<div><b>Fecha Acto: </b>' + rowInfo.original.fecha_acto + '</div>' +
+                                '<div><b>Numero de Beneficiarios: </b>' + rowInfo.original.numero_beneficiarios + '</div>' +
+                                '<div><b>Razones de Exclusion: </b>' + rowInfo.original.razones_exclusion + '</div>' +
+                                '<div><b>Nombre de Beneficiario: </b>' + rowInfo.original.nombrebene + '</div>'
+                              }"),
+                   html = TRUE,
+                   width = 60,
+                 ),
+                 columns = list(
+                   organismo_nombre = colDef(name = "Organismo"), #, filterable = FALSE),
+                   organismo_codigo = colDef(name = "Codigo Interno de Organismo", show = FALSE),
+                   fecha_publicacion_ta = colDef(name = "Fecha Publicado"),
+                   anyo = colDef(name = "Año", show=FALSE),
+                   Mes = colDef(name = "Mes", show=FALSE),
+                   tipo_subsidiobeneficio = colDef(name = "Tipo Subsidio/Beneficio"),
+                   unidad_organo = colDef(name = "Unidad Organismo"),
+                   requisitos = colDef(name = "Requisitos", show = FALSE),
+                   monto_global = colDef(name = "Monto por Unidad"),
+                   Tipo.Unidad.monetaria = colDef(name = "Tipo Unidad"),
+                   periodo_inicio = colDef(name = "Periodo Inicio", show=FALSE),
+                   periodo_fin = colDef(name = "Periodo Fin", show=FALSE),
+                   criterio_evaluacion = colDef(name = "Criterio Evaluacion", show = FALSE),
+                   plazos_asociados = colDef(name = "Plazos Asociados", show=FALSE),
+                   objetivo = colDef(name = "Objetivo", show = FALSE),
+                   Tipo.Acto = colDef(name = "Tipo de Acto", show=FALSE),
+                   denominacion_acto = colDef(name = "Denominacion Acto", show=FALSE),
+                   numero_acto = colDef(name = "Numero Acto", show=FALSE),
+                   fecha_acto = colDef(name = "Fecha Acto", show=FALSE),
+                   enlace_texto = colDef(name = "Enlace Documento", 
+                                         cell = function(value) {
+                                           url <- str_extract( value , regex("(http.*)(?=target)") )
+                                           filename <- str_extract( as.character(url) , regex('(?!.*\\/).*') )
+                                           htmltools::tags$a(href = url, target = "_blank", filename  ) 
+                                         }),
+                   numero_beneficiarios = colDef(name = "Numero de Beneficiarios", show=FALSE),
+                   razones_exclusion = colDef(name = "Razones Exclusion", show=FALSE),
+                   nombrebene = colDef(name = "Nombre de Beneficiario", show=FALSE),
+                   enlace_masinfo = colDef(name = "Enlace Sitio", 
+                                           cell = function(value) {
+                                             url <- str_extract( value , regex("(http.*)(?=target)") )
+                                             htmltools::tags$a(href = url, target = "_blank", "mas Info")
+                                           }),
+                   activado = colDef(name = "Activado/Inactivo", cell = JS("
+                      function(cellInfo) {
+                        // Render as an X mark or check mark
+                        return cellInfo.value === '0' ? '\u274c No' : '\u2714\ufe0f Si'
+                      }
+                    "))
+                 ),
+                 theme = reactableTheme(
+                   rowSelectedStyle = list(backgroundColor = "#eee", 
+                                           boxShadow = "inset 2px 0 0 0 #ffa62d"
+                   ) 
+                 )
+            )
+    })
+    #renderDataTable({  filtered_full    }) 
     
     showModal(modalDialog(
       {
         p( )
-        dataTableOutput(outputId = "dataTbl1") 
+        #dataTableOutput(outputId = "dataTbl1")
+        reactableOutput(outputId = "dataTbl1")
       },   
       title = as.character(summary_selected$MSG_SUMMARY), #click[1],
       footer = modalButton("Dismiss"),
