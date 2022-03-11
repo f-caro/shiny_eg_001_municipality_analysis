@@ -58,32 +58,55 @@ server <- function(input, output, session) {
                showPageSizeOptions = TRUE, pageSizeOptions = c(10, 25, 100, 1000), defaultPageSize = 10 , 
                highlight = TRUE,
                searchable = TRUE,   #much better, since it auto searches in all columns
-               defaultExpanded = TRUE,
+               defaultExpanded = FALSE,
+               outlined = TRUE,
+               #striped = TRUE,
                details = colDef(
                  name = "Mas Info",
                  details = JS("function(rowInfo) {
                                 console.log(rowInfo);
-                                return '<div> <b>Numero de Acto: </b>' + rowInfo.original.numero_acto + '</div>' +
-                                '<div><b>Año: </b>' + rowInfo.original.anyo + '   <b>Mes: </b>' + rowInfo.original.Mes + '</div>' +
-                                '<div><b>Fecha de Acto: </b>' + rowInfo.original.fecha_acto + '</div>' +
-                                '<div><b>Requisitos: </b>' + rowInfo.original.requisitos + '</div>' +
-                                '<div><b>Periodo Inicio: </b>' + rowInfo.original.periodo_inicio + '  <b>Fin : </b>' + rowInfo.original.periodo_fin + '</div>' +
-                                '<div><b>Criterio de Evaluacion: </b>' + rowInfo.original.criterio_evaluacion + '</div>' +
-                                '<div><b>Plazos Asociados: </b>' + rowInfo.original.plazos_asociados + '</div>' +
-                                '<div><b>Objetivo: </b>' + rowInfo.original.objetivo + '</div>' +
-                                '<div><b>Tipo Acto: </b>' + rowInfo.original[\"Tipo.Acto\"] + '</div>' +
-                                '<div><b>Denominacion de Acto: </b>' + rowInfo.original.denominacion_acto + '</div>' +
-                                '<div><b>Numero Acto: </b>' + rowInfo.original.numero_acto + '</div>'  +
-                                '<div><b>Fecha Acto: </b>' + rowInfo.original.fecha_acto + '</div>' +
-                                '<div><b>Numero de Beneficiarios: </b>' + rowInfo.original.numero_beneficiarios + '</div>' +
-                                '<div><b>Razones de Exclusion: </b>' + rowInfo.original.razones_exclusion + '</div>' +
-                                '<div><b>Nombre de Beneficiario: </b>' + rowInfo.original.nombrebene + '</div>'
+                                return '<div class=\"well\">' + 
+                                  '<div class=\"row\">' + 
+                                    '<div class=\"col-md-1 col-md-offset-3\" ><b>Organismo Codigo </b><br>' + rowInfo.original.organismo_codigo + '</div>' +
+                                    '<div class=\"col-md-5\"><b>Organismo </b><br>' + rowInfo.original.organismo_nombre + '</div>' +
+                                    '<div class=\"col-md-1\"><b>Año </b><br>' + rowInfo.original.anyo + '</div>' + 
+                                    '<div class=\"col-md-1\"><b>Mes </b><br>' + rowInfo.original.Mes + '</div>' +
+                                    '<div class=\"col-md-1\"><b>Fecha de Acto </b><br>' + rowInfo.original.fecha_acto + '</div>' +
+                                  '</div>'+
+                                '</div>'+
+                                //'<div class=\"well\">'+
+                                  '<dl class=\"dl-horizontal col-md-offset-1\"><dt>Requisitos: </dt><dd>' + rowInfo.original.requisitos + '</dd></dl>'+
+                                //'</div>' +
+                                //'<div class=\"well\">'+
+                                  '<div class=\"row\">' + 
+                                    '<div class=\"col-md-3 col-md-offset-3 \"><b>Periodo Inicio: </b>  <span>' + rowInfo.original.periodo_inicio + '</span></div>'+
+                                    '<div class=\"col-md-3 col-md-offset-1 \"><b>Fin: </b> <span>' + rowInfo.original.periodo_fin + '</span></div>' +
+                                  '</div>' + 
+                                //'</div>' +
+                                
+                                //'<div class=\"well\">'+
+                                  '<div><dl class=\"dl-horizontal col-md-offset-1\"><dt>Criterio de Evaluacion: </dt><dd>' + rowInfo.original.criterio_evaluacion + '</dd></dl></div>' +
+                                  '<div><dl class=\"dl-horizontal col-md-offset-1\"><dt>Plazos Asociados: </dt><dd>' + rowInfo.original.plazos_asociados + '</dd></dl></div>' +
+                                  '<div><dl class=\"dl-horizontal col-md-offset-1\"><dt>Objetivo: </dt><dd>' + rowInfo.original.objetivo + '</dd></dl></div>' +
+                                  '<dl class=\"dl-horizontal col-md-offset-1\"><dt>Denominacion de Acto: </dt><dd>' + rowInfo.original.denominacion_acto + '</dd></dl>' +
+                                //'</div>' +
+                                
+                                '<div class=\"well\">'+
+                                  '<div class=\"row\">' + 
+                                    '<div class=\"col-md-1 col-md-offset-3\"><b>Tipo Acto: </b>' + rowInfo.original[\"Tipo.Acto\"] + '</div>' +
+                                    '<div class=\"col-md-1\"><b>Numero Acto: </b><br>' + rowInfo.original.numero_acto + '</div>'  +
+                                    '<div class=\"col-md-1\"><b>Fecha Acto: </b><br>' + rowInfo.original.fecha_acto + '</div>' +
+                                    '<div class=\"col-md-1\"><b>Numero de Beneficiarios: </b><br>' + rowInfo.original.numero_beneficiarios + '</div>' +
+                                    '<div class=\"col-md-2\"><b>Razones de Exclusion: </b><br>' + rowInfo.original.razones_exclusion + '</div>' +
+                                    '<div class=\"col-md-3\"><b>Nombre de Beneficiario: </b><br>' + rowInfo.original.nombrebene + '</div>' +
+                                  '</div>' +
+                                '</div>'
                               }"),
                  html = TRUE,
                  width = 60,
                ),
                  columns = list(
-                   organismo_nombre = colDef(name = "Organismo"), #, filterable = FALSE),
+                   organismo_nombre = colDef(name = "Organismo", show = FALSE), #, filterable = FALSE),
                    organismo_codigo = colDef(name = "Codigo Interno de Organismo", show = FALSE),
                    fecha_publicacion_ta = colDef(name = "Fecha Publicado"),
                    anyo = colDef(name = "Año", show=FALSE),
