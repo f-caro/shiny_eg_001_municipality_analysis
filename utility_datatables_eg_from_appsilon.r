@@ -74,22 +74,17 @@ server <- function(input, output, session) {
                                     '<div class=\"col-md-1\"><b>Fecha de Acto </b><br>' + rowInfo.original.fecha_acto + '</div>' +
                                   '</div>'+
                                 '</div>'+
-                                //'<div class=\"well\">'+
+                                
                                   '<dl class=\"dl-horizontal col-md-offset-1\"><dt>Requisitos: </dt><dd>' + rowInfo.original.requisitos + '</dd></dl>'+
-                                //'</div>' +
-                                //'<div class=\"well\">'+
                                   '<div class=\"row\">' + 
                                     '<div class=\"col-md-3 col-md-offset-3 \"><b>Periodo Inicio: </b>  <span>' + rowInfo.original.periodo_inicio + '</span></div>'+
                                     '<div class=\"col-md-3 col-md-offset-1 \"><b>Fin: </b> <span>' + rowInfo.original.periodo_fin + '</span></div>' +
                                   '</div>' + 
-                                //'</div>' +
                                 
-                                //'<div class=\"well\">'+
                                   '<div><dl class=\"dl-horizontal col-md-offset-1\"><dt>Criterio de Evaluacion: </dt><dd>' + rowInfo.original.criterio_evaluacion + '</dd></dl></div>' +
                                   '<div><dl class=\"dl-horizontal col-md-offset-1\"><dt>Plazos Asociados: </dt><dd>' + rowInfo.original.plazos_asociados + '</dd></dl></div>' +
                                   '<div><dl class=\"dl-horizontal col-md-offset-1\"><dt>Objetivo: </dt><dd>' + rowInfo.original.objetivo + '</dd></dl></div>' +
                                   '<dl class=\"dl-horizontal col-md-offset-1\"><dt>Denominacion de Acto: </dt><dd>' + rowInfo.original.denominacion_acto + '</dd></dl>' +
-                                //'</div>' +
                                 
                                 '<div class=\"well\">'+
                                   '<div class=\"row\">' + 
