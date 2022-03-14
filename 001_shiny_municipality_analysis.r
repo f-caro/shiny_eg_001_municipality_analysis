@@ -49,66 +49,66 @@ iconQuestionMarkPng <- makeIcon(
 
 # Define UI for the APP ----
 ui <- fluidPage(
+  tags$style(
+    type = 'text/css',
+    '.modal-dialog { min-width:800px; width: 90%; }'
+   
+  ),
   # App title ----
-  h1("Chile Subsidies Nov 2021 Analysis"),
-  radioButtons("inRadioEntriesOrMoney", "Circle Sizes relative to:",
-               inline=TRUE,
-               choiceNames= c("Number of Entries", "Amount of Money"),
-               choiceValues= c(1,2),
-  ) ,
-  checkboxGroupInput("chkboxGrpPtSubsets", "Filter Circle Data Points by:",
-                     choiceNames =  list("Municipalities", "Universities", "Subsecretary Offices", "Government Offices"),
-                     choiceValues = list("MUNICIPAL", "UNIVERSIDAD", "SUBSEC", "GOBIERNO"),
-                     inline=TRUE,
-                     selected="as.character(0)"
+  h1(class="bg-primary","Chile Subsidies Nov 2021 Analysis"),
+  tags$div( class="row",
+    tags$div( class="col-md-4 col-md-offset-2",
+      radioButtons("inRadioEntriesOrMoney", "Circle Sizes relative to:",
+                   inline=TRUE,
+                   choiceNames= c("Number of Entries", "Amount of Money"),
+                   choiceValues= c(1,2),
+      ) 
+    ),
+    tags$div( class="col-md-6",
+      checkboxGroupInput("chkboxGrpPtSubsets", "Filter Circle Data Points by:",
+                         choiceNames =  list("Municipalities", "Universities", "Subsecretary Offices", "Government Offices"),
+                         choiceValues = list("MUNICIPAL", "UNIVERSIDAD", "SUBSEC", "GOBIERNO"),
+                         inline=TRUE,
+                         selected="as.character(0)"
+      ) 
+    ),
   ),
   leafletOutput(outputId = "leafletMap" , width = "100%", height = "800px"), # height= 100% doesn't pass through
+  tags$div( class="row bg-info",
+  a(class="col-md-12 text-right",  href="https://www.portaltransparencia.cl/opendata/dataset/transparencia-activa-publicada-en-el-portal" , 
+    "SOURCE: https://www.portaltransparencia.cl/opendata/dataset/transparencia-activa-publicada-en-el-portal"),
+  ),
   
-  # sidebarLayout(
-  #   sidebarPanel( width = 3, 
-  #   #actionButton(inputId = "buttonCount_n", label = "Relative to #Entries" ),
-  #   radioButtons("inRadioEntriesOrMoney", "Circle Sizes relative to:",
-  #                inline=TRUE,
-  #                choiceNames= c("Number of Entries", "Amount of Money"),
-  #                choiceValues= c(1,2),
-  #                ) ,
-  #   checkboxGroupInput("chkboxGrpPtSubsets", "Filter Circle Data Points by:",
-  #                      choiceNames =  list("Municipalities", "Universities", "Subsecretary Offices", "Government Offices"),
-  #                      choiceValues = list("MUNICIPAL", "UNIVERSIDAD", "SUBSEC", "GOBIERNO"),
-  #                      inline=TRUE,
-  #                      selected="as.character(0)"
-  #                      ),
-  #   # actionButton(inputId = "buttonFilterOnlyMuni", label = "Show only by MUNICIPALITY\'s" ),
-  #   #actionButton(inputId = "buttonInsertRegionNuble", label = "Insert Region BioBio Layer" ),
-  #   # checkboxGroupInput("chkboxGrpAreaPerRegion", "Show Total Money Subsidied by Region",
-  #   #                    choiceNames =  region_list[2:length(region_list)],
-  #   #                    choiceValues = region_list[2:length(region_list)],  #Avoids NA in 1st entry
-  #   #                    selected="Región Del Biobío"
-  #   #                    ),
-  #   ),
-  # mainPanel( width = 9,
-  #   leafletOutput(outputId = "leafletMap" , width = "100%", height = "800px"), # height= 100% doesn't pass through
-  #   )
-  # ),
- 
-  #dataTableOutput(outputId = "dataTbl2"),
   
-  h4("Source : https://www.portaltransparencia.cl/opendata/dataset/transparencia-activa-publicada-en-el-portal"),
-  h5("CSV Source : https://www.cplt.cl/transparencia_activa/datoabierto/archivos/TA_Subsidios_beneficios.csv")
+  tags$div( class="row bg-info",
+  a(class="col-md-12 text-right",  href="https://www.cplt.cl/transparencia_activa/datoabierto/archivos/TA_Subsidios_beneficios.csv" , 
+    "CSV Source : https://www.cplt.cl/transparencia_activa/datoabierto/archivos/TA_Subsidios_beneficios.csv"),
+  )
+  #h5(class="bg-info text-right", "CSV Source : https://www.cplt.cl/transparencia_activa/datoabierto/archivos/TA_Subsidios_beneficios.csv") 
+  
 )
 
 radiusChosen <- 0
+zoomChosen <- 10
 
 # Define server logic required to draw a histogram ----
 server <- function(input, output, session) {
  
+  # radiusColSrcName <- function(radiusChosen){
+  #  return(  
+  #    switch( radiusChosen, 
+  #           ~CIRCLE_RADIUS_MONTO_TOTAL, 
+  #           ~CIRCLE_RADIUS_COUNT_N 
+  #           )
+  #  )
+  # }
+  
   radiusColSrcName <- function(radiusChosen){
-   return(  
-     switch( radiusChosen, 
-            ~CIRCLE_RADIUS_MONTO_TOTAL, 
-            ~CIRCLE_RADIUS_COUNT_N 
-            )
-   )
+      switch( radiusChosen, 
+       
+        return( ~CIRCLE_RADIUS_MONTO_TOTAL + 10  ),
+        return( ~CIRCLE_RADIUS_COUNT_N + 10  )
+      )
   }
    
   changeRadiusVectorSrc <- function( radiusChosen , filterByStr )
@@ -208,6 +208,18 @@ server <- function(input, output, session) {
     #                   selected = x
     #)
   })
+  
+  # observe({
+  #   if(!is.null(input$leaflet_zoom)) {
+  #     zoomLevelChosen <- input$leaflet_zoom
+  #     print(paste0("currentZoom level: ", zoomLevelChosen ))
+  #   }
+  # })
+  observeEvent(input$leafletMap_zoom, {
+    zoomLevelChosen <- input$leafletMap_zoom
+    print(paste0("currentZoom level: ", zoomLevelChosen ))
+  }, ignoreNULL = TRUE)
+  
   
   # observe({  #OLD logic when dealing with CheckBoxGroup 
   #   chkboxGroupSelectionsStr <- paste(input$chkboxGrpPtSubsets, collapse = "|")
@@ -348,7 +360,7 @@ server <- function(input, output, session) {
       },   
       title = as.character(summary_selected$MSG_SUMMARY), #click[1],
       footer = modalButton("Dismiss"),
-      size = "xl" ,
+      size = "l" ,
       easyClose = TRUE,
       fade = TRUE
     ))
@@ -356,7 +368,7 @@ server <- function(input, output, session) {
   
   output$leafletMap <- renderLeaflet({
       leaflet(data = df_muni_leaf ) %>%
-      setView(lat = -36.82699, lng = -73.04977, zoom = 10) %>% 
+      setView(lat = -36.82699, lng = -73.04977, zoom = zoomChosen) %>% 
       addTiles() %>%
       addMiniMap( position = "bottomleft", zoomAnimation = TRUE , zoomLevelOffset = -4) %>%
       addProviderTiles(providers$CartoDB.Positron)  %>%
